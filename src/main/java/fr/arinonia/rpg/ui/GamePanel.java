@@ -1,6 +1,9 @@
 package fr.arinonia.rpg.ui;
 
+import fr.arinonia.rpg.entity.Player;
 import fr.arinonia.rpg.handler.KeyHandler;
+import fr.arinonia.rpg.tile.CollisionChecker;
+import fr.arinonia.rpg.tile.TileManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -15,14 +18,18 @@ public class GamePanel extends JPanel implements Runnable {
     private final int screenWidth = tileSize * maxScreenCol; //768px
     private final int screenHeight = tileSize * maxScreenRow; //576px
 
+    public final int maxWorldCol = 50;
+    public final int maxWorldRow = 50;
+    public final int worldWidth = tileSize * maxScreenCol;
+    public final int worldHeight = tileSize * maxScreenRow;
     private final int fps = 60;
+    private final TileManager tileManager = new TileManager(this);
     private final KeyHandler keyHandler = new KeyHandler();
     private Thread gameThread;
 
-    //set player's default position
-    private int playerX = 100;
-    private int playerY = 100;
-    private int playerSpeed = 4;
+    private final CollisionChecker collisionChecker = new CollisionChecker(this);
+    private final Player player = new Player(this, keyHandler);
+
 
     public GamePanel() {
         this.setPreferredSize(new Dimension(screenWidth, screenHeight));
@@ -70,23 +77,63 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void update() {
-        if (this.keyHandler.isUpPressed()) {
-            this.playerY -= this.playerSpeed;
-        } else if (this.keyHandler.isDownPressed()) {
-            this.playerY += this.playerSpeed;
-        } else if (this.keyHandler.isRightPressed()) {
-            this.playerX += this.playerSpeed;
-        } else if (this.keyHandler.isLeftPressed()) {
-            this.playerX -= this.playerSpeed;
-        }
+        player.update();
     }
 
     @Override
     public void paintComponent(final Graphics g) {
         super.paintComponent(g);
         final Graphics2D g2 = (Graphics2D)g;
-        g2.setColor(Color.BLUE);
-        g2.fillRect(this.playerX, this.playerY, tileSize, tileSize);
+        tileManager.draw(g2);
+        player.draw(g2);
         g2.dispose();
+    }
+
+    public int getTileSize() {
+        return this.tileSize;
+    }
+
+    public int getMaxScreenCol() {
+        return this.maxScreenCol;
+    }
+
+    public int getMaxScreenRow() {
+        return this.maxScreenRow;
+    }
+
+    public int getScreenWidth() {
+        return this.screenWidth;
+    }
+
+    public int getScreenHeight() {
+        return this.screenHeight;
+    }
+
+    public int getMaxWorldCol() {
+        return this.maxWorldCol;
+    }
+
+    public int getMaxWorldRow() {
+        return this.maxWorldRow;
+    }
+
+    public int getWorldWidth() {
+        return this.worldWidth;
+    }
+
+    public int getWorldHeight() {
+        return this.worldHeight;
+    }
+
+    public Player getPlayer() {
+        return this.player;
+    }
+
+    public TileManager getTileManager() {
+        return this.tileManager;
+    }
+
+    public CollisionChecker getCollisionChecker() {
+        return this.collisionChecker;
     }
 }
