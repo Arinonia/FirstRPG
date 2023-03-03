@@ -3,6 +3,7 @@ package fr.arinonia.rpg.entity;
 import fr.arinonia.rpg.Game;
 import fr.arinonia.rpg.handler.KeyHandler;
 import fr.arinonia.rpg.ui.GamePanel;
+import fr.arinonia.rpg.utils.UtilityTool;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -17,6 +18,9 @@ public class Player extends Entity {
     public final int screenX;
     public final int screenY;
 
+    private int key = 0;
+
+
     public Player(final GamePanel gamePanel, final KeyHandler keyHandler) {
         this.gamePanel = gamePanel;
         this.keyHandler = keyHandler;
@@ -25,8 +29,10 @@ public class Player extends Entity {
         this.solidArea = new Rectangle();
         solidArea.x = 8;
         solidArea.y = 16;
-        solidArea.width = 32;
-        solidArea.height = 32;
+        this.solidAreadDefaultX = solidArea.x;
+        this.solidAreadDefaultY = solidArea.y;
+        solidArea.width = 20;
+        solidArea.height = 20;
         setDefaultValues();
         loadPlayerImages();
     }
@@ -39,18 +45,27 @@ public class Player extends Entity {
     }
 
     public void loadPlayerImages() {
+        this.up1 = setup("char_up_1");
+        this.up2 = setup("char_up_2");
+        this.down1 = setup("char_down_1");
+        this.down2 = setup("char_down_2");
+        this.left1 = setup("char_left_1");
+        this.left2 = setup("char_left_2");
+        this.right1 = setup("char_right_1");
+        this.right2 = setup("char_right_2");
+    }
+
+    public BufferedImage setup(final String imageName) {
+        final UtilityTool utilityTool = new UtilityTool();
+        BufferedImage scaledImage = null;
+
         try {
-            this.up1 = ImageIO.read(Game.class.getResourceAsStream("/images/player/char_up_1.png"));
-            this.up2 = ImageIO.read(Game.class.getResourceAsStream("/images/player/char_up_2.png"));
-            this.down1 = ImageIO.read(Game.class.getResourceAsStream("/images/player/char_down_1.png"));
-            this.down2 = ImageIO.read(Game.class.getResourceAsStream("/images/player/char_down_2.png"));
-            this.left1 = ImageIO.read(Game.class.getResourceAsStream("/images/player/char_left_1.png"));
-            this.left2 = ImageIO.read(Game.class.getResourceAsStream("/images/player/char_left_2.png"));
-            this.right1 = ImageIO.read(Game.class.getResourceAsStream("/images/player/char_right_1.png"));
-            this.right2 = ImageIO.read(Game.class.getResourceAsStream("/images/player/char_right_2.png"));
+            scaledImage = ImageIO.read(Game.class.getResourceAsStream("/images/player/" + imageName + ".png"));
+            scaledImage = utilityTool.scaleImage(scaledImage, this.gamePanel.getTileSize(), this.gamePanel.getTileSize());
         } catch (final IOException e) {
             e.printStackTrace();
         }
+        return scaledImage;
     }
     public void update() {
 
@@ -68,6 +83,9 @@ public class Player extends Entity {
 
             collisionOn = false;
             gamePanel.getCollisionChecker().checkTile(this);
+            int objIndex = gamePanel.getCollisionChecker().checkObject(this, true);
+            pickObject(objIndex);
+
 
             if (!collisionOn) {
                 switch (direction) {
@@ -86,6 +104,42 @@ public class Player extends Entity {
                     this.spriteNumber = 1;
                 }
                 this.spriteCounter = 0;
+            }
+        }
+    }
+
+    public void pickObject(int index) {
+        if (index != -1) {
+            final String name = this.gamePanel.getObj()[index].getName();
+
+            switch (name) {
+                case "Key":
+                    this.gamePanel.playSE(1);
+                    this.gamePanel.getObj()[index] = null;
+                    this.key++;
+                    this.gamePanel.getUi().showMessage("You got a key");
+                    break;
+                case "Door":
+                    if (this.key > 0 || this.keyHandler.isCheckDrawTime()) {
+                        this.gamePanel.playSE(3);
+                        this.key--;
+                        this.gamePanel.getObj()[index] = null;
+                        this.gamePanel.getUi().showMessage("You just open a new door!");
+                    } else {
+                        this.gamePanel.getUi().showMessage("You need to find a key!");
+                    }
+                    break;
+                case "Boots":
+                    this.gamePanel.playSE(2);
+                    speed += 2;
+                    this.gamePanel.getObj()[index] = null;
+                    this.gamePanel.getUi().showMessage("You find boots! that's increase your speed");
+                    break;
+                case "Chest":
+                    this.gamePanel.getUi().setGameFinished(true);
+                    this.gamePanel.stopMusic();
+                    this.gamePanel.playSE(4);
+                    break;
             }
         }
     }
@@ -127,7 +181,7 @@ public class Player extends Entity {
                }
                break;
        }
-       g2.drawImage(image, screenX, screenY, this.gamePanel.getTileSize(), this.gamePanel.getTileSize(), null);
+       g2.drawImage(image, screenX, screenY, null);
     }
 
     public int getScreenX() {
@@ -138,4 +192,7 @@ public class Player extends Entity {
         return this.screenY;
     }
 
+    public int getKey() {
+        return this.key;
+    }
 }

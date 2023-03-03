@@ -11,13 +11,14 @@ public class Game {
         final JFrame window = new JFrame();
         window.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         window.setResizable(false);
-        window.setTitle(Constants.APP_NAME);
+        window.setTitle(Constants.APP_NAME + " - " + Constants.APP_VERSION + " DEBUG ENV");
         final GamePanel gamePanel = new GamePanel();
         window.add(gamePanel);
         window.pack();
         window.setLocationRelativeTo(null);
         window.setVisible(true);
 
+        gamePanel.setupGame();
         gamePanel.startGameThread();
     }
 

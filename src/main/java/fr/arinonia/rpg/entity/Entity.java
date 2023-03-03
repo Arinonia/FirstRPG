@@ -24,6 +24,8 @@ public abstract class Entity {
     protected int spriteNumber = 1;
 
     protected Rectangle solidArea;
+    protected int solidAreadDefaultX;
+    protected int solidAreadDefaultY;
     protected boolean collisionOn = false;
 
 
@@ -93,5 +95,13 @@ public abstract class Entity {
 
     public boolean isCollisionOn() {
         return this.collisionOn;
+    }
+
+    public int getSolidAreadDefaultX() {
+        return solidAreadDefaultX;
+    }
+
+    public int getSolidAreadDefaultY() {
+        return solidAreadDefaultY;
     }
 }

@@ -1,6 +1,8 @@
 package fr.arinonia.rpg.tile;
 
+import fr.arinonia.rpg.Game;
 import fr.arinonia.rpg.ui.GamePanel;
+import fr.arinonia.rpg.utils.UtilityTool;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
@@ -8,41 +10,80 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
 
 public class TileManager {
     private final GamePanel gamePanel;
     private final Tile[] tile;
-    private final int[][] mapTileNum;
+    private int[][] mapTileNum;
+
+    private final ArrayList<String> fileNames = new ArrayList<>();
+    private final ArrayList<String> collisionStatus = new ArrayList<>();
 
     public TileManager(final GamePanel gamePanel) {
         this.gamePanel = gamePanel;
-        this.tile = new Tile[10];
-        this.mapTileNum = new int[50][50];
-        getTileImage();
-        loadMap("/maps/world01.txt");
+
+        InputStream is = Game.class.getResourceAsStream("/maps/tiledata.txt");
+        BufferedReader br = new BufferedReader(new InputStreamReader(is));
+
+        String line;
+
+        try {
+            while ((line = br.readLine()) != null) {
+                this.fileNames.add(line);
+                this.collisionStatus.add(br.readLine());
+            }
+            br.close();
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+        this.tile = new Tile[this.fileNames.size()];
+        loadTileImage();
+
+        is = Game.class.getResourceAsStream("/maps/maptest.txt");
+        br = new BufferedReader(new InputStreamReader(is));
+
+        try {
+            String l = br.readLine();
+            String[] maxTile = l.split(" ");
+            this.gamePanel.setMaxWorldCol(maxTile.length);
+            this.gamePanel.setMaxWorldRow(maxTile.length);
+
+            this.mapTileNum = new int[gamePanel.getMaxWorldCol()][gamePanel.getMaxWorldRow()];
+            br.close();
+        } catch (final Exception e) {
+            e.printStackTrace();
+        }
+
+        loadMap("/maps/maptest.txt");
     }
 
-    public void getTileImage() {
+    public void loadTileImage() {
+
+        for (int i = 0; i < this.fileNames.size(); i++) {
+            String fileName;
+            boolean collision;
+
+            fileName = this.fileNames.get(i);
+            collision = Boolean.parseBoolean(collisionStatus.get(i));
+
+            setup(i, fileName, collision);
+        }
+    }
+
+    public void setup(final int index, final String imageName, final boolean collision) {
+        final UtilityTool utilityTool = new UtilityTool();
+
         try {
-            this.tile[0] = new Tile();
-            this.tile[0].setImage(ImageIO.read(getClass().getResourceAsStream("/images/tiles/grass.png")));
-            this.tile[1] = new Tile();
-            this.tile[1].setImage(ImageIO.read(getClass().getResourceAsStream("/images/tiles/wall.png")));
-            this.tile[1].setCollision(true);
-            this.tile[2] = new Tile();
-            this.tile[2].setImage(ImageIO.read(getClass().getResourceAsStream("/images/tiles/water.png")));
-            this.tile[2].setCollision(true);
-            this.tile[3] = new Tile();
-            this.tile[3].setImage(ImageIO.read(getClass().getResourceAsStream("/images/tiles/earth.png")));
-            this.tile[4] = new Tile();
-            this.tile[4].setImage(ImageIO.read(getClass().getResourceAsStream("/images/tiles/tree.png")));
-            this.tile[4].setCollision(true);
-            this.tile[5] = new Tile();
-            this.tile[5].setImage(ImageIO.read(getClass().getResourceAsStream("/images/tiles/sand.png")));
-        } catch (IOException e) {
+            this.tile[index] = new Tile();
+            this.tile[index].setImage(ImageIO.read(getClass().getResourceAsStream("/images/tiles/" + imageName)));
+            this.tile[index].setImage(utilityTool.scaleImage(this.tile[index].getImage(), this.gamePanel.getTileSize(), this.gamePanel.getTileSize()));
+            this.tile[index].setCollision(collision);
+        } catch (final IOException e) {
             e.printStackTrace();
         }
     }
+
 
     public void loadMap(final String filePath) {
         try {
@@ -72,15 +113,22 @@ public class TileManager {
     public void draw(final Graphics2D g2) {
         int worldCol = 0;
         int worldRow = 0;
+
         while (worldCol < 50 && worldRow < 50) {
+
             final int tileNum = this.mapTileNum[worldCol][worldRow];
-            final int worldX = worldCol * 48;
-            final int worldY = worldRow * 48;
-            int screenX = worldX - this.gamePanel.getPlayer().getWorldX() + this.gamePanel.getPlayer().screenX;
-            int screenY = worldY - this.gamePanel.getPlayer().getWorldY() + this.gamePanel.getPlayer().screenY;
-            if (worldX + 48 > this.gamePanel.getPlayer().getWorldX() - this.gamePanel.getPlayer().screenX && worldX - 48 < this.gamePanel.getPlayer().getWorldX() + this.gamePanel.getPlayer().screenX && worldY + 48 > this.gamePanel.getPlayer().getWorldY() - this.gamePanel.getPlayer().screenY && worldY - 48 < this.gamePanel.getPlayer().getWorldY() + this.gamePanel.getPlayer().screenY) {
-                g2.drawImage((this.tile[tileNum]).getImage(), screenX, screenY, 48, 48, null);
+            final int worldX = worldCol * this.gamePanel.getTileSize();
+            final int worldY = worldRow * this.gamePanel.getTileSize();
+            final int screenX = worldX - this.gamePanel.getPlayer().getWorldX() + this.gamePanel.getPlayer().screenX;
+            final int screenY = worldY - this.gamePanel.getPlayer().getWorldY() + this.gamePanel.getPlayer().screenY;
+
+            if (worldX + 48 > this.gamePanel.getPlayer().getWorldX() - this.gamePanel.getPlayer().screenX &&
+                    worldX - this.gamePanel.getTileSize() < this.gamePanel.getPlayer().getWorldX() + this.gamePanel.getPlayer().screenX &&
+                    worldY + this.gamePanel.getTileSize() > this.gamePanel.getPlayer().getWorldY() - this.gamePanel.getPlayer().screenY &&
+                    worldY - this.gamePanel.getTileSize() < this.gamePanel.getPlayer().getWorldY() + this.gamePanel.getPlayer().screenY) {
+                g2.drawImage((this.tile[tileNum]).getImage(), screenX, screenY, null);
             }
+
             worldCol++;
             if (worldCol == 50) {
                 worldCol = 0;

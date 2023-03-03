@@ -2,6 +2,8 @@ package fr.arinonia.rpg.ui;
 
 import fr.arinonia.rpg.entity.Player;
 import fr.arinonia.rpg.handler.KeyHandler;
+import fr.arinonia.rpg.objects.SuperObject;
+import fr.arinonia.rpg.sound.Sound;
 import fr.arinonia.rpg.tile.CollisionChecker;
 import fr.arinonia.rpg.tile.TileManager;
 
@@ -18,17 +20,27 @@ public class GamePanel extends JPanel implements Runnable {
     private final int screenWidth = tileSize * maxScreenCol; //768px
     private final int screenHeight = tileSize * maxScreenRow; //576px
 
-    public final int maxWorldCol = 50;
-    public final int maxWorldRow = 50;
-    public final int worldWidth = tileSize * maxScreenCol;
-    public final int worldHeight = tileSize * maxScreenRow;
+    public int maxWorldCol = 50;
+    public int maxWorldRow = 50;
+
     private final int fps = 60;
     private final TileManager tileManager = new TileManager(this);
     private final KeyHandler keyHandler = new KeyHandler();
-    private Thread gameThread;
+    private final Sound music = new Sound();
+    private final Sound soundEffect = new Sound();
+
 
     private final CollisionChecker collisionChecker = new CollisionChecker(this);
+
+    private final AssetSetter assetSetter = new AssetSetter(this);
+    private final Ui ui = new Ui(this);
+
+    public Thread gameThread;
+
+
     private final Player player = new Player(this, keyHandler);
+
+    private SuperObject obj[] = new SuperObject[10];//display only 10 obj at the same time
 
 
     public GamePanel() {
@@ -37,6 +49,11 @@ public class GamePanel extends JPanel implements Runnable {
         this.setDoubleBuffered(true);
         this.addKeyListener(keyHandler);
         this.setFocusable(true);
+    }
+
+    public void setupGame() {
+        this.assetSetter.setObject();
+        playMusic(0);
     }
 
     public void startGameThread() {
@@ -84,9 +101,47 @@ public class GamePanel extends JPanel implements Runnable {
     public void paintComponent(final Graphics g) {
         super.paintComponent(g);
         final Graphics2D g2 = (Graphics2D)g;
-        tileManager.draw(g2);
-        player.draw(g2);
+
+        //debug
+        long drawStart = 0;
+        if (this.keyHandler.isCheckDrawTime()) {
+            drawStart = System.nanoTime();
+        }
+
+        this.tileManager.draw(g2);
+        for (final SuperObject superObject : this.obj) {
+            if (superObject != null) {
+                superObject.draw(g2, this);
+            }
+        }
+        this.player.draw(g2);
+        ui.draw(g2);
+
+        if (this.keyHandler.isCheckDrawTime()) {
+            long drawEnd = System.nanoTime();
+            long passed = drawEnd - drawStart;
+
+            g2.setColor(Color.WHITE);
+            g2.drawString("Draw time: " + ((double)passed / 1000000000) + "s", 10, 400);
+            System.out.println("Draw time: " + passed);
+            g2.drawString("Dev mod enable", 10, 480);
+        }
         g2.dispose();
+    }
+
+    public void playMusic(final int index) {
+        this.music.setFile(index);
+        this.music.play();
+        this.music.loop();
+    }
+
+    public void stopMusic() {
+        this.music.stop();
+    }
+
+    public void playSE(final int index) {
+        this.soundEffect.setFile(index);
+        this.soundEffect.play();
     }
 
     public int getTileSize() {
@@ -117,12 +172,12 @@ public class GamePanel extends JPanel implements Runnable {
         return this.maxWorldRow;
     }
 
-    public int getWorldWidth() {
-        return this.worldWidth;
+    public void setMaxWorldCol(int maxWorldCol) {
+        this.maxWorldCol = maxWorldCol;
     }
 
-    public int getWorldHeight() {
-        return this.worldHeight;
+    public void setMaxWorldRow(int maxWorldRow) {
+        this.maxWorldRow = maxWorldRow;
     }
 
     public Player getPlayer() {
@@ -133,7 +188,27 @@ public class GamePanel extends JPanel implements Runnable {
         return this.tileManager;
     }
 
+    public AssetSetter getAssetSetter() {
+        return this.assetSetter;
+    }
+
+    public Sound getMusic() {
+        return this.music;
+    }
+
     public CollisionChecker getCollisionChecker() {
         return this.collisionChecker;
+    }
+
+    public SuperObject[] getObj() {
+        return this.obj;
+    }
+
+    public Ui getUi() {
+        return this.ui;
+    }
+
+    public KeyHandler getKeyHandler() {
+        return this.keyHandler;
     }
 }

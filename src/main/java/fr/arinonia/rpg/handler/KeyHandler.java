@@ -10,6 +10,8 @@ public class KeyHandler implements KeyListener {
     private boolean leftPressed;
     private boolean rightPressed;
 
+    private boolean checkDrawTime = false;
+
 
     @Override
     public void keyTyped(final KeyEvent e) {
@@ -50,6 +52,11 @@ public class KeyHandler implements KeyListener {
         if (code == KeyEvent.VK_S) {
             this.downPressed = false;
         }
+
+        //debug
+        if (code == KeyEvent.VK_T) {
+            this.checkDrawTime = !checkDrawTime;
+        }
     }
 
     public boolean isUpPressed() {
@@ -66,5 +73,9 @@ public class KeyHandler implements KeyListener {
 
     public boolean isRightPressed() {
         return this.rightPressed;
+    }
+
+    public boolean isCheckDrawTime() {
+        return this.checkDrawTime;
     }
 }
